@@ -161,7 +161,27 @@ uv run exo
 
 This starts the exo dashboard and API at http://localhost:52415/
 
-**Important note for Linux users:** Currently, exo runs on CPU on Linux. GPU support for Linux platforms is under development. If you'd like to see support for your specific Linux hardware, please [search for existing feature requests](https://github.com/exo-explore/exo/issues) or create a new one.
+**Linux GPU Support (CUDA):** exo supports GPU acceleration on Linux using NVIDIA CUDA. By default, exo runs on CPU. To enable CUDA support:
+
+```bash
+# Install with CUDA support
+uv sync --extra cuda
+
+# Run exo (will automatically detect and use CUDA if available)
+uv run exo
+```
+
+**CUDA Requirements:**
+- NVIDIA GPU with compute capability 7.0+ (Volta, Turing, Ampere, Ada, Hopper)
+- NVIDIA Driver 550.54.14 or newer
+- CUDA 12.0+ (included via MLX)
+
+**WSL2 Support:** For Windows users, exo works in WSL2 with CUDA:
+1. Install NVIDIA GPU Driver for Windows (with WSL support) - do NOT install drivers inside WSL
+2. Install WSL2 with Ubuntu 22.04+
+3. Install exo with `uv sync --extra cuda` inside WSL
+
+See [docs/cuda-setup.md](docs/cuda-setup.md) for detailed setup instructions.
 
 **Configuration Options:**
 
@@ -400,7 +420,21 @@ The tool outputs performance metrics including prompt tokens per second (prompt_
 
 ## Hardware Accelerator Support
 
-On macOS, exo uses the GPU. On Linux, exo currently runs on CPU. We are working on extending hardware accelerator support. If you'd like support for a new hardware platform, please [search for an existing feature request](https://github.com/exo-explore/exo/issues) and add a thumbs up so we know what hardware is important to the community.
+exo supports the following hardware accelerators:
+
+| Platform | Backend | Status |
+|----------|---------|--------|
+| macOS (Apple Silicon) | Metal | ✅ Full support |
+| Linux (NVIDIA GPU) | CUDA | ✅ Supported via `uv sync --extra cuda` |
+| Linux (CPU) | CPU | ✅ Default |
+| Windows (WSL2 + NVIDIA) | CUDA | ✅ Supported |
+
+**CUDA Requirements (Linux/WSL2):**
+- NVIDIA GPU with compute capability 7.0+ (Volta, Turing, Ampere, Ada, Hopper)
+- NVIDIA Driver 550.54.14 or newer
+- For WSL2: Install Windows NVIDIA driver (not Linux driver inside WSL)
+
+If you'd like support for a new hardware platform, please [search for an existing feature request](https://github.com/exo-explore/exo/issues) and add a thumbs up so we know what hardware is important to the community.
 
 ---
 
