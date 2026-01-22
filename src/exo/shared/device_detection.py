@@ -5,7 +5,7 @@ Metal (macOS), CUDA (Linux), and CPU-only backends.
 """
 
 import sys
-from typing import Literal, TypedDict, final
+from typing import Literal, final
 
 import mlx.core as mx
 
@@ -14,13 +14,6 @@ from exo.shared.logging import get_logger
 BackendType = Literal["metal", "cuda", "cpu"]
 
 logger = get_logger(__name__)
-
-
-class MetalDeviceInfo(TypedDict, total=False):
-    """Type definition for Metal device info dictionary."""
-
-    device_name: str
-    max_recommended_working_set_size: int
 
 
 @final
