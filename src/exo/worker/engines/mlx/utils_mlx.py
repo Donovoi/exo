@@ -23,6 +23,7 @@ from mlx_lm.models.deepseek_v3 import DeepseekV3Model
 from mlx_lm.models.gpt_oss import Model as GptOssModel
 from mlx_lm.tokenizer_utils import TokenizerWrapper
 
+from exo.shared.device_detection import detect_available_backend
 from exo.shared.models.model_cards import ModelId
 from exo.worker.engines.mlx.constants import (
     CACHE_GROUP_SIZE,
@@ -477,28 +478,43 @@ def mlx_force_oom(size: int = 40000) -> None:
 
 def set_wired_limit_for_model(model_size: Memory):
     """
-    A context manager to temporarily change the wired limit.
+    Set memory limits for the model based on the available backend.
 
-    Note, the wired limit should not be changed during an async eval.  If an
+    On Metal (macOS): Sets the wired memory limit to the max recommended working set size.
+    On CUDA (Linux): Memory management is handled differently - no wired limit concept.
+    On CPU: No memory limits needed.
+
+    Note, the wired limit should not be changed during an async eval. If an
     async eval could be running pass in the streams to synchronize with prior
     to exiting the context manager.
     """
-    if not mx.metal.is_available():
-        return
+    backend = detect_available_backend()
 
-    model_bytes = model_size.in_bytes
-    max_rec_size = int(mx.metal.device_info()["max_recommended_working_set_size"])
-    if model_bytes > 0.9 * max_rec_size:
-        model_mb = model_bytes // 2**20
-        max_rec_mb = max_rec_size // 2**20
-        logger.warning(
-            f"Generating with a model that requires {model_mb} MB "
-            f"which is close to the maximum recommended size of {max_rec_mb} "
-            "MB. This can be slow. See the documentation for possible work-arounds: "
-            "https://github.com/ml-explore/mlx-lm/tree/main#large-models"
-        )
-    mx.set_wired_limit(max_rec_size)
-    logger.info(f"Wired limit set to {max_rec_size}.")
+    if backend == "metal":
+        # Metal is confirmed available by detect_available_backend()
+        model_bytes = model_size.in_bytes
+        max_rec_size = int(mx.metal.device_info()["max_recommended_working_set_size"])
+        if model_bytes > 0.9 * max_rec_size:
+            model_mb = model_bytes // 2**20
+            max_rec_mb = max_rec_size // 2**20
+            logger.warning(
+                f"Generating with a model that requires {model_mb} MB "
+                f"which is close to the maximum recommended size of {max_rec_mb} "
+                "MB. This can be slow. See the documentation for possible work-arounds: "
+                "https://github.com/ml-explore/mlx-lm/tree/main#large-models"
+            )
+        mx.set_wired_limit(max_rec_size)
+        logger.info(f"Wired limit set to {max_rec_size}.")
+
+    elif backend == "cuda":
+        # CUDA memory management is different from Metal
+        # Memory is allocated on-demand and freed when tensors go out of scope
+        # For now, we log that we're running on CUDA
+        logger.info("Running on CUDA backend - memory managed automatically")
+
+    else:
+        # CPU backend - no memory limits needed
+        logger.debug("Running on CPU backend - no memory limits set")
 
 
 def mlx_cleanup(

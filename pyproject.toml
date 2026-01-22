@@ -46,11 +46,18 @@ dev = [
     "ruff>=0.11.13",
 ]
 
-# mlx[cuda] requires a newer version of mlx. the ideal on linux is: default to mlx[cpu] unless[cuda] specified.
+# CUDA optional dependencies for Linux
+# By default, Linux uses mlx[cpu]. Install with: uv sync --extra cuda
 [project.optional-dependencies]
-# cuda = [
-#     "mlx[cuda]==0.26.3",
-# ]
+cuda = [
+    "mlx[cuda]>=0.30.0; sys_platform == 'linux'",
+]
+cuda12 = [
+    "mlx[cuda-12]>=0.30.0; sys_platform == 'linux'",
+]
+cuda13 = [
+    "mlx[cuda-13]>=0.30.0; sys_platform == 'linux'",
+]
 
 ###
 # workspace configuration
@@ -124,7 +131,8 @@ extend-select = ["I", "N", "B", "A", "PIE", "SIM"]
 pythonpath = "."
 asyncio_mode = "auto"
 markers = [
-    "slow: marks tests as slow (deselected by default)"
+    "slow: marks tests as slow (deselected by default)",
+    "cuda: marks tests that require CUDA (deselected by default on non-CUDA systems)"
 ]
 env = [
   "EXO_TESTS=1"
